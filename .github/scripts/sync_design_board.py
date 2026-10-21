@@ -77,8 +77,10 @@ def to_row(item):
     c = item.get("content") or {}
     assignees = [a["login"] for a in (c.get("assignees") or {}).get("nodes", [])]
     tracked = [a for a in assignees if a.lower() in TEAM]
-    if not tracked:
+    if assignees and not tracked:  # assigned only to people outside the team
         return None
+    if not assignees:
+        tracked = ["Unassigned"]
     row = {
         "id": item["id"],
         "title": c.get("title") or "(untitled)",
@@ -170,7 +172,7 @@ def props(row, title_prop):
 
 def main():
     rows = [r for r in map(to_row, fetch_items()) if r]
-    print(f"{len(rows)} board items assigned to {', '.join(TEAM)}")
+    print(f"{len(rows)} board items assigned to {', '.join(TEAM)} or unassigned")
     if DRY_RUN:
         for r in rows:
             print(f"- [{r['status']}] {r['sprint'] or '-'} | {r['repo']}#{r['number']} {r['title']} ({', '.join(r['assignees'])})")
@@ -186,7 +188,7 @@ def main():
         else:
             notion("pages", {"parent": {"database_id": NOTION_DB}, "properties": props(r, title_prop)}, "POST")
             created += 1
-    for page_id in pages.values():  # left the board or no longer assigned to the team
+    for page_id in pages.values():  # left the board or now assigned only outside the team
         notion(f"pages/{page_id}", {"archived": True}, "PATCH")
     print(f"Notion: {created} created, {updated} updated, {len(pages)} archived")
 
