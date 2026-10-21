@@ -1,0 +1,22 @@
+name: Design Board → Notion
+
+on:
+  schedule:
+    - cron: "43 23 * * *" # 06:43 Bangkok, daily
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sync project #156 to Notion
+        run: python .github/scripts/sync_design_board.py
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_MANAGEMENT_TOKEN }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DESIGN_BOARD_DB }}
+          TEAM_MEMBERS: palden4,evanyerburgh,lod0001
